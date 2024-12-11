@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, Text, View } from 'react-native';
+import { StyleSheet, ScrollView, TouchableOpacity, Text, View, Dimensions } from 'react-native';
 import { getFirestore, collection, onSnapshot, query, where } from 'firebase/firestore'; 
 import { getAuth } from 'firebase/auth';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -10,12 +10,13 @@ import PagoModal from '../components/PagoModal';
 import Balance from '../components/Balance';
 import CustomButton from '../components/CustomButton';
 import Header from '../components/Header';
-import Pagina1 from './Pagina1';
-import Pagina2 from './Pagina2';
-import Pagina3 from './Pagina3';
+import Estadisticas from './Estadisticas';  
 import Mapa from './Mapa';
 import { db } from '../firebaseConfig';
 
+import { LineChart } from 'react-native-chart-kit';
+
+const windowWidth = Dimensions.get('window').width;
 const Tab = createBottomTabNavigator();
 
 const HomePage = ({ navigation, route }) => {
@@ -27,7 +28,7 @@ const HomePage = ({ navigation, route }) => {
 
   return (
     <NavigationContainer independent={true} style={{backgroundColor: '#090E14'}}>
-      <View style={{ flex: 1,paddingTop:10,backgroundColor:'#090E14' }}>
+      <View style={{ flex: 1, paddingTop:10, backgroundColor:'#090E14' }}>
         <Header />
         <Tab.Navigator
           screenOptions={({ route }) => ({
@@ -39,17 +40,11 @@ const HomePage = ({ navigation, route }) => {
                 case 'Home':
                   iconName = 'home-outline';
                   break;
-                case 'Pagina1':
-                  iconName = 'list-outline';
-                  break;
-                case 'Pagina2':
+                case 'Estadisticas':
                   iconName = 'pie-chart-outline';
                   break;
                 case 'Mapa':
                   iconName = 'map';
-                  break;
-                case 'Pagina3':
-                  iconName = 'rocket-outline';
                   break;
                 default:
                   iconName = 'help-outline';
@@ -73,10 +68,8 @@ const HomePage = ({ navigation, route }) => {
               />
             )}
           </Tab.Screen>
-          <Tab.Screen name="Pagina1" component={Pagina1} options={{ headerShown: false }} />
-          <Tab.Screen name="Pagina2" component={Pagina2} options={{ headerShown: false }} />
+          <Tab.Screen name="Estadisticas" component={Estadisticas} options={{ headerShown: false }} />
           <Tab.Screen name="Mapa" component={Mapa} options={{ headerShown: false }} />
-          <Tab.Screen name="Pagina3" component={Pagina3} options={{ headerShown: false }} />
         </Tab.Navigator>
       </View>
     </NavigationContainer>
@@ -85,9 +78,9 @@ const HomePage = ({ navigation, route }) => {
 
 const MainHomePage = ({ navigation, usuario, handlePress }) => {
   const [modalVisible, setModalVisible] = useState(false);
-  const [pagos, setPagos] = useState([]);
   const [pagosServicio, setPagosServicio] = useState([]);
   const [pagosProducto, setPagosProducto] = useState([]);
+  
   const auth = getAuth();
   const currentUser = auth.currentUser;
 
@@ -102,7 +95,6 @@ const MainHomePage = ({ navigation, usuario, handlePress }) => {
         const pagosPorServicio = pagosData.filter((pago) => pago.tipo === 'Suscripcion');
         const pagosPorProducto = pagosData.filter((pago) => pago.tipo === 'Servicio');
 
-        setPagos(pagosData);
         setPagosServicio(pagosPorServicio);
         setPagosProducto(pagosPorProducto);
       }, (error) => {
@@ -113,10 +105,73 @@ const MainHomePage = ({ navigation, usuario, handlePress }) => {
     }
   }, [currentUser]);
 
+  const recentTransactions = [
+    { date: "2024-12-01", description: "Spotify", amount: "-$9.99" },
+    { date: "2024-11-29", description: "Supermercado", amount: "-$65.00" },
+    { date: "2024-11-28", description: "Gas", amount: "-$30.00" },
+    { date: "2024-11-27", description: "Nómina", amount: "+$1200.00" },
+    { date: "2024-11-25", description: "Uber", amount: "-$15.00" },
+  ];
+
+  const financialGoals = [
+    { goal: "Fondo de Emergencia", progress: "30%", details: "Has ahorrado $300 de $1000" },
+    { goal: "Vacaciones", progress: "50%", details: "Has ahorrado $500 de $1000" },
+    { goal: "Laptop nueva", progress: "10%", details: "Has ahorrado $100 de $1000" },
+  ];
+
+  const tips = [
+    "Revisa tus gastos semanalmente para evitar sorpresas.",
+    "Automatiza transferencias a tu cuenta de ahorros.",
+    "Compara precios antes de contratar nuevos servicios.",
+    "Establece metas de ahorro realistas y medibles.",
+  ];
+
+  const lineChartData = {
+    labels: ["Jul", "Ago", "Sep", "Oct", "Nov", "Dic"],
+    datasets: [
+      {
+        data: [200, 180, 250, 300, 220, 270], 
+        color: () => `rgba(132, 250, 127, 1)`, 
+        strokeWidth: 2
+      }
+    ],
+    legend: ["Gastos Mensuales (USD)"]
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <Balance />
-      <TouchableOpacity style={styles.card}>
+
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>Resumen Mensual</Text>
+        <Text style={styles.infoText}>Gasto Total Este Mes: $450</Text>
+        <Text style={styles.infoText}>Ahorro Total Este Mes: $150</Text>
+        
+        {/* Contenedor centrado */}
+        <View style={{alignItems: 'center'}}>
+          <LineChart
+            data={lineChartData}
+            width={windowWidth - 40} // Usar el width total menos el padding
+            height={180}
+            chartConfig={{
+              backgroundColor: "#090E14",
+              backgroundGradientFrom: "#090E14",
+              backgroundGradientTo: "#090E14",
+              color: (opacity = 1) => `rgba(132, 250, 127, ${opacity})`,
+              labelColor: (opacity = 1) => `rgba(201,209,217,${opacity})`,
+              propsForDots: {
+                r: "4",
+                strokeWidth: "2",
+                stroke: "#84FA7F"
+              }
+            }}
+            style={styles.chartStyle}
+            bezier
+          />
+        </View>
+      </View>
+
+      <View style={styles.card}>
         <Text style={styles.sectionTitle}>Pagos de Suscripciones</Text>
         <View style={styles.row}>
           {pagosServicio.map((pago, index) => (
@@ -128,9 +183,9 @@ const MainHomePage = ({ navigation, usuario, handlePress }) => {
             />
           ))}
         </View>
-      </TouchableOpacity>
+      </View>
 
-      <TouchableOpacity style={styles.card}>
+      <View style={styles.card}>
         <Text style={styles.sectionTitle}>Pagos de Servicios</Text>
         <View style={styles.row}>
           {pagosProducto.map((pago, index) => (
@@ -142,7 +197,35 @@ const MainHomePage = ({ navigation, usuario, handlePress }) => {
             />
           ))}
         </View>
-      </TouchableOpacity>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>Transacciones Recientes</Text>
+        {recentTransactions.map((item, index) => (
+          <View key={index} style={styles.transactionRow}>
+            <Text style={[styles.transactionText, {flex: 1}]}>{item.date}</Text>
+            <Text style={[styles.transactionText, {flex: 2}]}>{item.description}</Text>
+            <Text style={[styles.transactionText, {flex: 1, color: item.amount.startsWith('-') ? '#FA7F7F' : '#84FA7F' }]}>{item.amount}</Text>
+          </View>
+        ))}
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>Metas Financieras</Text>
+        {financialGoals.map((goal, index) => (
+          <View key={index} style={styles.goalRow}>
+            <Text style={styles.goalTitle}>{goal.goal}</Text>
+            <Text style={styles.goalProgress}>{goal.progress} - {goal.details}</Text>
+          </View>
+        ))}
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>Consejos Financieros</Text>
+        {tips.map((tip, index) => (
+          <Text key={index} style={styles.tipText}>• {tip}</Text>
+        ))}
+      </View>
 
       <TouchableOpacity style={styles.addPaymentButton} onPress={() => setModalVisible(true)}>
         <Text style={styles.addPaymentButtonText}>Agregar Pago</Text>
@@ -159,18 +242,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#090E14',
     paddingBottom: 30,
     paddingTop: 60,
+    paddingHorizontal: 20,
   },
   sectionTitle: {
     fontSize: 22,
     fontWeight: 'bold',
     color: '#C9D1D9',
-    marginVertical: 15,
+    marginBottom: 15,
+  },
+  infoText: {
+    color: '#C9D1D9',
+    fontSize: 16,
+    marginBottom: 5
   },
   row: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     flexWrap: 'wrap',
     marginBottom: 15,
+    justifyContent: 'flex-start'
   },
   card: {
     backgroundColor: '#2D384A',
@@ -179,6 +268,32 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     elevation: 3,
     width: '100%',
+  },
+  transactionRow: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  transactionText: {
+    color: '#C9D1D9',
+    fontSize: 14,
+  },
+  goalRow: {
+    marginBottom: 10,
+  },
+  goalTitle: {
+    color: '#84FA7F',
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginBottom: 2,
+  },
+  goalProgress: {
+    color: '#C9D1D9',
+    fontSize: 14,
+  },
+  tipText: {
+    color: '#C9D1D9',
+    fontSize: 14,
+    marginBottom: 5,
   },
   addPaymentButton: {
     marginTop: 20,
@@ -191,6 +306,10 @@ const styles = StyleSheet.create({
     color: '#090E14',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  chartStyle: {
+    borderRadius: 10,
+    marginVertical: 10
   },
 });
 
